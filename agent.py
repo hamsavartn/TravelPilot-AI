@@ -37,14 +37,21 @@ def orchestrator(state: AgentState):
             content = "".join([b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text"])
         text = content.replace('```json', '').replace('```', '').strip()
         data = json.loads(text)
+        budget_val = data.get("budget", 0.0)
+        try:
+            budget = float(budget_val)
+        except (ValueError, TypeError):
+            budget = 1000.0
+            
         return {
             "origin": data.get("origin", "Unknown"),
             "destination": data.get("destination", "Unknown"),
             "dates": data.get("dates", "Unknown"),
-            "budget": float(data.get("budget", 0.0)),
+            "budget": budget,
             "status": "Orchestrator parsed query"
         }
-    except:
+    except Exception as e:
+        print(f"Orchestrator error: {e}")
         return {"origin": "New York", "destination": "Paris", "dates": "Next week", "budget": 1000.0, "status": "Orchestrator used fallback parsing"}
 
 

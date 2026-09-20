@@ -5,4 +5,3 @@ streamlit==1.37.1
 pydeck==0.9.1
 python-dotenv==1.0.1
 requests==2.32.3
-1

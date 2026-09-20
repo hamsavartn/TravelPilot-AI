@@ -144,7 +144,10 @@ with col2:
             result = graph.invoke(Command(resume="approve"), config)
             # The agent will have replanned and updated the itinerary
             if "itinerary" in result:
-                st.session_state.messages.append({"role": "assistant", "content": "Plan updated:\n" + result["itinerary"]})
+                itinerary = result["itinerary"]
+                if isinstance(itinerary, list):
+                    itinerary = "".join([b.get("text", "") for b in itinerary if isinstance(b, dict) and b.get("type") == "text"])
+                st.session_state.messages.append({"role": "assistant", "content": "Plan updated:\n" + itinerary})
             st.rerun()
         if c2.button("❌ Reject"):
             result = graph.invoke(Command(resume="reject"), config)

@@ -1,4 +1,4 @@
-import os
+1import os
 import json
 from typing import TypedDict, List, Dict, Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize LLM
-llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", temperature=0)
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
+
 
 class AgentState(TypedDict):
     query: str

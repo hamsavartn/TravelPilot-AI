@@ -15,6 +15,7 @@ llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", temperature=0)
 
 class AgentState(TypedDict):
     query: str
+    origin: str
     destination: str
     dates: str
     budget: float
@@ -28,7 +29,7 @@ class AgentState(TypedDict):
 
 def orchestrator(state: AgentState):
     query = state.get("query", "")
-    prompt = f"Extract destination, dates, and budget (as float) from this travel query. Return ONLY JSON format: {{\"destination\": \"City\", \"dates\": \"Date range\", \"budget\": 1000.0}}. Query: {query}"
+    prompt = f"Extract origin, destination, dates, and budget (as float) from this travel query. Return ONLY JSON format: {{\"origin\": \"City\", \"destination\": \"City\", \"dates\": \"Date range\", \"budget\": 1000.0}}. Query: {query}"
     response = llm.invoke([HumanMessage(content=prompt)])
     try:
         content = response.content
@@ -37,13 +38,14 @@ def orchestrator(state: AgentState):
         text = content.replace('```json', '').replace('```', '').strip()
         data = json.loads(text)
         return {
+            "origin": data.get("origin", "Unknown"),
             "destination": data.get("destination", "Unknown"),
             "dates": data.get("dates", "Unknown"),
             "budget": float(data.get("budget", 0.0)),
             "status": "Orchestrator parsed query"
         }
     except:
-        return {"destination": "Paris", "dates": "Next week", "budget": 1000.0, "status": "Orchestrator used fallback parsing"}
+        return {"origin": "New York", "destination": "Paris", "dates": "Next week", "budget": 1000.0, "status": "Orchestrator used fallback parsing"}
 
 
 def constraint_manager(state: AgentState):
@@ -53,9 +55,10 @@ def constraint_manager(state: AgentState):
     }
 
 def search_agent(state: AgentState):
+    origin = state.get("origin", "New York")
     dest = state.get("destination", "Paris")
     
-    prompt = f"""Generate realistic coordinate data for {dest}.
+    prompt = f"""Generate realistic coordinate data for a trip from {origin} to {dest}.
 Return ONLY a valid JSON object with this exact structure:
 {{
     "search_data": {{
@@ -64,11 +67,11 @@ Return ONLY a valid JSON object with this exact structure:
         "activities": [{{"name": "Popular Site", "cost": 50, "lat": 0.0, "lon": 0.0}}]
     }},
     "waypoints": [
-        {{"name": "Origin", "lat": 40.7128, "lon": -74.0060}},
+        {{"name": "{origin}", "lat": 40.7128, "lon": -74.0060}},
         {{"name": "Central Hotel", "lat": 0.0, "lon": 0.0}}
     ]
 }}
-Ensure you return at least 4 waypoints (1 origin like New York for the flight path arc, 1 hotel, 2 activities) with real latitude/longitude for {dest}."""
+Ensure you return at least 4 waypoints (1 origin like {origin} for the flight path arc, 1 hotel, 2 activities) with real latitude/longitude for {origin} and {dest}."""
 
     response = llm.invoke([HumanMessage(content=prompt)])
     try:
@@ -87,11 +90,12 @@ Ensure you return at least 4 waypoints (1 origin like New York for the flight pa
         # Fallback
         return {
             "search_data": {"hotels": [{"name": "Fallback", "lat": 48.85, "lon": 2.35}]},
-            "waypoints": [{"name": "Origin", "lat": 40.7128, "lon": -74.0060}, {"name": "Fallback", "lat": 48.85, "lon": 2.35}],
+            "waypoints": [{"name": origin, "lat": 40.7128, "lon": -74.0060}, {"name": "Fallback", "lat": 48.85, "lon": 2.35}],
             "status": "Search data fallback"
         }
 
 def planner(state: AgentState):
+    origin = state.get("origin")
     dest = state.get("destination")
     dates = state.get("dates")
     budget = state.get("budget")
@@ -103,7 +107,7 @@ CRITICAL VERIFICATION STEP (CoVe): At the end of your itinerary, add a '### Veri
     if disruption:
         sys_msg += f"\nIMPORTANT: Modify the plan to handle this disruption: {disruption}. Explicitly verify that the disruption was mitigated in the Verification section."
         
-    prompt = f"Destination: {dest}, Dates: {dates}, Budget: {budget}\nAvailable options: {search_data}\nGenerate a beautiful Markdown itinerary."
+    prompt = f"Origin: {origin}, Destination: {dest}, Dates: {dates}, Budget: {budget}\nAvailable options: {search_data}\nGenerate a beautiful Markdown itinerary that includes flights from the origin to the destination."
     response = llm.invoke([SystemMessage(content=sys_msg), HumanMessage(content=prompt)])
     
     content = response.content

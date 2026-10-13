@@ -28,9 +28,3 @@ TravelPilot is an autonomous multi-agent travel planner built with LangGraph and
    ```bash
    streamlit run app.py
    ```
-
-## Demo Script (3-Minute Video)
-1. **0:00 - 0:30:** Open the app. Show the UI and explain the architecture (LangGraph handling state and specialized agents).
-2. **0:30 - 1:30:** Type a query: "Plan a 3-day trip to Paris for $1000". Wait for the LLM to generate the itinerary and map waypoints.
-3. **1:30 - 2:30:** Click the **"🚨 Simulate Severe Weather"** button. Explain how this injects state into the LangGraph and triggers the `budget_checker` node to interrupt execution.
-4. **2:30 - 3:00:** Show the HITL buttons appearing. Click **Approve** and watch the agent dynamically replan the trip. End recording.
